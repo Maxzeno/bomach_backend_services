@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    ServiceCategory, Service, Client, ServiceLead, Quote,
+    ServiceCategory, Service, ServiceLead, Quote,
     ServiceOrder, Invoice, InvoiceItem, Payment
 )
 
@@ -20,36 +20,28 @@ class ServiceAdmin(admin.ModelAdmin):
     ordering = ['-created_at']
 
 
-@admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'phone', 'verification_status', 'created_at']
-    list_filter = ['verification_status', 'created_at']
-    search_fields = ['name', 'email', 'phone', 'company']
-    ordering = ['-created_at']
-
-
 @admin.register(ServiceLead)
 class ServiceLeadAdmin(admin.ModelAdmin):
-    list_display = ['client', 'service', 'estimated_value', 'status', 'created_at']
+    list_display = ['client_name', 'client_id', 'service', 'estimated_value', 'status', 'created_at']
     list_filter = ['status', 'created_at']
-    search_fields = ['client__name', 'service__name', 'notes']
+    search_fields = ['client_name', 'client_id', 'service__name', 'notes']
     ordering = ['-created_at']
 
 
 @admin.register(Quote)
 class QuoteAdmin(admin.ModelAdmin):
-    list_display = ['quote_number', 'client', 'service', 'amount', 'valid_until', 'status', 'created_at']
+    list_display = ['quote_number', 'client_name', 'client_id', 'service', 'amount', 'valid_until', 'status', 'created_at']
     list_filter = ['status', 'created_at']
-    search_fields = ['quote_number', 'client__name', 'service__name']
+    search_fields = ['quote_number', 'client_name', 'client_id', 'service__name']
     ordering = ['-created_at']
     readonly_fields = ['quote_number']
 
 
 @admin.register(ServiceOrder)
 class ServiceOrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'client', 'service', 'amount', 'order_status', 'payment_status', 'created_at']
+    list_display = ['order_number', 'client_name', 'client_id', 'service', 'amount', 'order_status', 'payment_status', 'created_at']
     list_filter = ['order_status', 'payment_status', 'created_at']
-    search_fields = ['order_number', 'client__name', 'service__name']
+    search_fields = ['order_number', 'client_name', 'client_id', 'service__name']
     ordering = ['-created_at']
     readonly_fields = ['order_number']
 
@@ -62,9 +54,9 @@ class InvoiceItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ['invoice_number', 'client', 'service', 'total_amount', 'amount_paid', 'status', 'issue_date', 'due_date']
+    list_display = ['invoice_number', 'client_name', 'client_id', 'service', 'total_amount', 'amount_paid', 'status', 'issue_date', 'due_date']
     list_filter = ['status', 'issue_date', 'created_at']
-    search_fields = ['invoice_number', 'client__name', 'service__name']
+    search_fields = ['invoice_number', 'client_name', 'client_id', 'service__name']
     ordering = ['-created_at']
     readonly_fields = ['invoice_number', 'tax_amount', 'total_amount', 'balance', 'payment_progress']
     inlines = [InvoiceItemInline]

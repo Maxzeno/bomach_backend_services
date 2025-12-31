@@ -1,4 +1,4 @@
-from ninja import Schema, ModelSchema
+from ninja import Schema
 from typing import Optional, List
 from datetime import date, datetime
 from decimal import Decimal
@@ -51,45 +51,19 @@ class ServiceOut(Schema):
     created_by: str
 
 
-# Client Schemas
-class ClientIn(Schema):
-    name: str
-    email: str
-    phone: Optional[str] = ""
-    company: Optional[str] = ""
-    address: Optional[str] = ""
-    project_description: Optional[str] = ""
-    verification_status: str = "pending"
-    created_by: str
-
-
-class ClientUpdate(Schema):
-    name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    company: Optional[str] = None
-    address: Optional[str] = None
-    project_description: Optional[str] = None
-    verification_status: Optional[str] = None
-
-
-class ClientOut(Schema):
-    id: int
-    name: str
-    email: str
-    phone: str
-    company: str
-    address: str
-    project_description: str
-    verification_status: str
-    created_at: datetime
-    updated_at: datetime
-    created_by: str
+# Client Reference Schema (for embedded client info)
+class ClientRefOut(Schema):
+    """Client reference info - data comes from main backend"""
+    client_id: str
+    client_name: str
+    client_email: str
 
 
 # ServiceLead Schemas
 class ServiceLeadIn(Schema):
-    client_id: int
+    client_id: str  # Reference to main backend client
+    client_name: str  # Cached for display
+    client_email: Optional[str] = ""
     service_id: Optional[int] = None
     estimated_value: Decimal
     status: str = "new"
@@ -98,7 +72,9 @@ class ServiceLeadIn(Schema):
 
 
 class ServiceLeadUpdate(Schema):
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
     service_id: Optional[int] = None
     estimated_value: Optional[Decimal] = None
     status: Optional[str] = None
@@ -107,7 +83,9 @@ class ServiceLeadUpdate(Schema):
 
 class ServiceLeadOut(Schema):
     id: int
-    client: ClientOut
+    client_id: str
+    client_name: str
+    client_email: str
     service: Optional[ServiceOut] = None
     estimated_value: Decimal
     status: str
@@ -119,7 +97,9 @@ class ServiceLeadOut(Schema):
 
 # Quote Schemas
 class QuoteIn(Schema):
-    client_id: int
+    client_id: str  # Reference to main backend client
+    client_name: str
+    client_email: Optional[str] = ""
     service_id: int
     description: str
     amount: Decimal
@@ -129,7 +109,9 @@ class QuoteIn(Schema):
 
 
 class QuoteUpdate(Schema):
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
     service_id: Optional[int] = None
     description: Optional[str] = None
     amount: Optional[Decimal] = None
@@ -140,7 +122,9 @@ class QuoteUpdate(Schema):
 class QuoteOut(Schema):
     id: int
     quote_number: str
-    client: ClientOut
+    client_id: str
+    client_name: str
+    client_email: str
     service: ServiceOut
     description: str
     amount: Decimal
@@ -153,7 +137,9 @@ class QuoteOut(Schema):
 
 # ServiceOrder Schemas
 class ServiceOrderIn(Schema):
-    client_id: int
+    client_id: str  # Reference to main backend client
+    client_name: str
+    client_email: Optional[str] = ""
     service_id: int
     quote_id: Optional[int] = None
     description: str
@@ -166,7 +152,9 @@ class ServiceOrderIn(Schema):
 
 
 class ServiceOrderUpdate(Schema):
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
     service_id: Optional[int] = None
     quote_id: Optional[int] = None
     description: Optional[str] = None
@@ -180,7 +168,9 @@ class ServiceOrderUpdate(Schema):
 class ServiceOrderOut(Schema):
     id: int
     order_number: str
-    client: ClientOut
+    client_id: str
+    client_name: str
+    client_email: str
     service: ServiceOut
     quote: Optional[QuoteOut] = None
     description: str
@@ -213,7 +203,9 @@ class InvoiceItemOut(Schema):
 
 # Invoice Schemas
 class InvoiceIn(Schema):
-    client_id: int
+    client_id: str  # Reference to main backend client
+    client_name: str
+    client_email: Optional[str] = ""
     service_id: int
     order_id: Optional[int] = None
     lead_id: Optional[int] = None
@@ -228,7 +220,9 @@ class InvoiceIn(Schema):
 
 
 class InvoiceUpdate(Schema):
-    client_id: Optional[int] = None
+    client_id: Optional[str] = None
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
     service_id: Optional[int] = None
     order_id: Optional[int] = None
     lead_id: Optional[int] = None
@@ -243,7 +237,9 @@ class InvoiceUpdate(Schema):
 class InvoiceOut(Schema):
     id: int
     invoice_number: str
-    client: ClientOut
+    client_id: str
+    client_name: str
+    client_email: str
     service: ServiceOut
     order: Optional[ServiceOrderOut] = None
     lead: Optional[ServiceLeadOut] = None
@@ -300,11 +296,6 @@ class ServiceListOut(Schema):
     results: List[ServiceOut]
 
 
-class ClientListOut(Schema):
-    count: int
-    results: List[ClientOut]
-
-
 class ServiceLeadListOut(Schema):
     count: int
     results: List[ServiceLeadOut]
@@ -336,3 +327,8 @@ class ServiceStatsOut(Schema):
     total_orders: int
     total_quotes: int
     total_invoices: int
+
+
+# Error Schemas
+class ErrorOut(Schema):
+    detail: str

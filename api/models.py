@@ -33,32 +33,7 @@ class Service(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return self.name
-
-
-class Client(models.Model):
-    VERIFICATION_STATUS_CHOICES = [
-        ('verified', 'Verified'),
-        ('pending', 'Pending'),
-        ('rejected', 'Rejected'),
-    ]
-
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True)
-    company = models.CharField(max_length=255, blank=True)
-    address = models.TextField(blank=True)
-    project_description = models.TextField(blank=True, help_text="Project or location description")
-    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
 
     class Meta:
         ordering = ['-created_at']
@@ -68,6 +43,9 @@ class Client(models.Model):
 
 
 class ServiceLead(models.Model):
+    """
+    Lead tracking - references clients from main backend via client_id.
+    """
     LEAD_STATUS_CHOICES = [
         ('new', 'New'),
         ('qualified', 'Qualified'),
@@ -77,20 +55,28 @@ class ServiceLead(models.Model):
         ('lost', 'Lost'),
     ]
 
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='leads')
+    # Reference to main backend Client via ID
+    client_id = models.CharField(max_length=100, db_index=True, default='', help_text="Client ID from main auth service")
+    client_name = models.CharField(max_length=255, default='', help_text="Cached client name for display")
+    client_email = models.EmailField(blank=True, default='', help_text="Cached client email for display")
+
     service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, related_name='leads')
     estimated_value = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
     status = models.CharField(max_length=20, choices=LEAD_STATUS_CHOICES, default='new')
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['client_id']),
+            models.Index(fields=['status']),
+        ]
 
     def __str__(self):
-        return f"{self.client.name} - {self.service.name if self.service else 'No Service'}"
+        return f"{self.client_name} - {self.service.name if self.service else 'No Service'}"
 
 
 class Quote(models.Model):
@@ -103,7 +89,12 @@ class Quote(models.Model):
     ]
 
     quote_number = models.CharField(max_length=50, unique=True, editable=False)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='quotes')
+
+    # Reference to main backend Client via ID
+    client_id = models.CharField(max_length=100, db_index=True, default='', help_text="Client ID from main auth service")
+    client_name = models.CharField(max_length=255, default='', help_text="Cached client name for display")
+    client_email = models.EmailField(blank=True, default='', help_text="Cached client email for display")
+
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='quotes')
     description = models.TextField()
     amount = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
@@ -111,10 +102,14 @@ class Quote(models.Model):
     status = models.CharField(max_length=20, choices=QUOTE_STATUS_CHOICES, default='draft')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['client_id']),
+            models.Index(fields=['status']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.quote_number:
@@ -122,7 +117,7 @@ class Quote(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.quote_number} - {self.client.name}"
+        return f"{self.quote_number} - {self.client_name}"
 
 
 class ServiceOrder(models.Model):
@@ -141,7 +136,12 @@ class ServiceOrder(models.Model):
     ]
 
     order_number = models.CharField(max_length=50, unique=True, editable=False)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='orders')
+
+    # Reference to main backend Client via ID
+    client_id = models.CharField(max_length=100, db_index=True, default='', help_text="Client ID from main auth service")
+    client_name = models.CharField(max_length=255, default='', help_text="Cached client name for display")
+    client_email = models.EmailField(blank=True, default='', help_text="Cached client email for display")
+
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='orders')
     quote = models.ForeignKey(Quote, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     description = models.TextField()
@@ -151,11 +151,16 @@ class ServiceOrder(models.Model):
     valid_until = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
-    assigned_to = models.CharField(max_length=100, blank=True, help_text="Employee ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
+    assigned_to = models.CharField(max_length=100, blank=True, help_text="Employee ID from main auth service")
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['client_id']),
+            models.Index(fields=['order_status']),
+            models.Index(fields=['payment_status']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.order_number:
@@ -163,7 +168,7 @@ class ServiceOrder(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.order_number} - {self.client.name}"
+        return f"{self.order_number} - {self.client_name}"
 
 
 class Invoice(models.Model):
@@ -178,7 +183,12 @@ class Invoice(models.Model):
     ]
 
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+
+    # Reference to main backend Client via ID
+    client_id = models.CharField(max_length=100, db_index=True, default='', help_text="Client ID from main auth service")
+    client_name = models.CharField(max_length=255, default='', help_text="Cached client name for display")
+    client_email = models.EmailField(blank=True, default='', help_text="Cached client email for display")
+
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='invoices')
     order = models.ForeignKey(ServiceOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     lead = models.ForeignKey(ServiceLead, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
@@ -197,10 +207,14 @@ class Invoice(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['client_id']),
+            models.Index(fields=['status']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.invoice_number:
@@ -227,7 +241,7 @@ class Invoice(models.Model):
         return (self.amount_paid / self.total_amount) * 100
 
     def __str__(self):
-        return f"{self.invoice_number} - {self.client.name}"
+        return f"{self.invoice_number} - {self.client_name}"
 
 
 class InvoiceItem(models.Model):
@@ -271,27 +285,35 @@ class Payment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.CharField(max_length=100, help_text="User ID from user service")
+    created_by = models.CharField(max_length=100, help_text="User ID from main auth service")
 
     class Meta:
         ordering = ['-payment_date']
 
     def save(self, *args, **kwargs):
+        from django.db import transaction
+
         if not self.payment_reference:
             self.payment_reference = f"PAY-{uuid.uuid4().hex[:12].upper()}"
-        super().save(*args, **kwargs)
 
-        # Update invoice amount_paid
-        total_paid = self.invoice.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
-        self.invoice.amount_paid = total_paid
+        # Use atomic transaction with select_for_update to prevent race conditions
+        with transaction.atomic():
+            super().save(*args, **kwargs)
 
-        # Update invoice status based on payment
-        if total_paid >= self.invoice.total_amount:
-            self.invoice.status = 'paid'
-        elif total_paid > 0:
-            self.invoice.status = 'partially_paid'
+            # Lock the invoice row for update to prevent concurrent modifications
+            invoice = Invoice.objects.select_for_update().get(pk=self.invoice_id)
 
-        self.invoice.save()
+            # Update invoice amount_paid with atomic calculation
+            total_paid = invoice.payments.aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+            invoice.amount_paid = total_paid
+
+            # Update invoice status based on payment
+            if total_paid >= invoice.total_amount:
+                invoice.status = 'paid'
+            elif total_paid > 0:
+                invoice.status = 'partially_paid'
+
+            invoice.save(update_fields=['amount_paid', 'status', 'updated_at'])
 
     def __str__(self):
         return f"{self.payment_reference} - {self.invoice.invoice_number}"
