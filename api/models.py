@@ -1,7 +1,9 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 import uuid
+from api.utils.validators import validate_client_id, validate_user_id, validate_employee_id
 
 
 class ServiceCategory(models.Model):
@@ -41,6 +43,27 @@ class Service(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation happens."""
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class ServiceLead(models.Model):
     """
@@ -78,6 +101,38 @@ class ServiceLead(models.Model):
     def __str__(self):
         return f"{self.client_name} - {self.service.name if self.service else 'No Service'}"
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate client_id
+        if self.client_id:
+            try:
+                client_info = validate_client_id(self.client_id)
+                # Update cached fields
+                if client_info:
+                    self.client_name = client_info.get('client_name', self.client_name)
+                    self.client_email = client_info.get('email', self.client_email)
+            except ValidationError as e:
+                errors['client_id'] = e.message
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation happens."""
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class Quote(models.Model):
     QUOTE_STATUS_CHOICES = [
@@ -111,7 +166,38 @@ class Quote(models.Model):
             models.Index(fields=['status']),
         ]
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate client_id
+        if self.client_id:
+            try:
+                client_info = validate_client_id(self.client_id)
+                # Update cached fields
+                if client_info:
+                    self.client_name = client_info.get('client_name', self.client_name)
+                    self.client_email = client_info.get('email', self.client_email)
+            except ValidationError as e:
+                errors['client_id'] = e.message
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
+        # Validate unless explicitly skipped
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+
+        # Auto-generate quote_number
         if not self.quote_number:
             self.quote_number = f"QTE-{uuid.uuid4().hex[:12].upper()}"
         super().save(*args, **kwargs)
@@ -162,7 +248,45 @@ class ServiceOrder(models.Model):
             models.Index(fields=['payment_status']),
         ]
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate client_id
+        if self.client_id:
+            try:
+                client_info = validate_client_id(self.client_id)
+                # Update cached fields
+                if client_info:
+                    self.client_name = client_info.get('client_name', self.client_name)
+                    self.client_email = client_info.get('email', self.client_email)
+            except ValidationError as e:
+                errors['client_id'] = e.message
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        # Validate assigned_to (employee_id) - optional field
+        if self.assigned_to:
+            try:
+                validate_employee_id(self.assigned_to)
+            except ValidationError as e:
+                errors['assigned_to'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
+        # Validate unless explicitly skipped
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+
+        # Auto-generate order_number
         if not self.order_number:
             self.order_number = f"ORD-{uuid.uuid4().hex[:12].upper()}"
         super().save(*args, **kwargs)
@@ -216,7 +340,38 @@ class Invoice(models.Model):
             models.Index(fields=['status']),
         ]
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate client_id
+        if self.client_id:
+            try:
+                client_info = validate_client_id(self.client_id)
+                # Update cached fields
+                if client_info:
+                    self.client_name = client_info.get('client_name', self.client_name)
+                    self.client_email = client_info.get('email', self.client_email)
+            except ValidationError as e:
+                errors['client_id'] = e.message
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
+        # Validate unless explicitly skipped
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+
+        # Auto-generate invoice_number
         if not self.invoice_number:
             from datetime import datetime
             year = datetime.now().year
@@ -290,9 +445,29 @@ class Payment(models.Model):
     class Meta:
         ordering = ['-payment_date']
 
+    def clean(self):
+        """Validate cross-service references before saving."""
+        super().clean()
+        errors = {}
+
+        # Validate created_by (user_id)
+        if self.created_by:
+            try:
+                validate_user_id(self.created_by)
+            except ValidationError as e:
+                errors['created_by'] = e.message
+
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
         from django.db import transaction
 
+        # Validate unless explicitly skipped
+        if not kwargs.pop('skip_validation', False):
+            self.full_clean()
+
+        # Auto-generate payment_reference
         if not self.payment_reference:
             self.payment_reference = f"PAY-{uuid.uuid4().hex[:12].upper()}"
 
