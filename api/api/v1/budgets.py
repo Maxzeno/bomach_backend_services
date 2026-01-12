@@ -69,6 +69,7 @@ def delete_budget(request, budget_id: int):
 
 
 @router.get("/invoice/{invoice_id}", response=List[BudgetOut])
+@paginate(LimitOffsetPagination, page_size=10)
 def get_budgets_by_invoice(request, invoice_id: str):
     """Get all budgets for a specific invoice ID."""
     budgets = Budget.objects.filter(invoice_id=invoice_id)
