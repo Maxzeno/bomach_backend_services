@@ -247,7 +247,7 @@ class Event(models.Model):
         indexes = [
             models.Index(fields=['status', 'event_date']),
             models.Index(fields=['event_type', '-event_date']),
-            models.Index(fields=['organizer', '-created_at']),
+            models.Index(fields=['organizer_id', '-created_at']),
         ]
     
     def __str__(self):
@@ -370,11 +370,11 @@ class EventRegistration(models.Model):
     class Meta:
         verbose_name = _("Event Registration")
         verbose_name_plural = _("Event Registrations")
-        unique_together = ['event', 'attendee']
+        unique_together = ['event', 'attendee_id']
         ordering = ['-registration_date']
     
     def __str__(self):
-        return f"{self.attendee} - {self.event.name}"
+        return f"{self.attendee_id} - {self.event.name}"
     
     def save(self, *args, **kwargs):
         """Generate confirmation code on save"""

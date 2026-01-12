@@ -201,7 +201,7 @@ class Content(models.Model):
         indexes = [
             models.Index(fields=['status', '-published_date']),
             models.Index(fields=['content_type', 'platform']),
-            models.Index(fields=['author', '-created_at']),
+            models.Index(fields=['author_id', '-created_at']),
         ]
     
     def __str__(self):
