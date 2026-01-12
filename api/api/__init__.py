@@ -1,6 +1,6 @@
 from ninja import NinjaAPI, Schema, Swagger
 
-from api.api.v1 import budgets, categories, expenses, invoices, leads, orders, payments, quotes, services, stats
+from api.api.v1 import budgets, categories, expenses, invoices, leads, marketing_campaigns, orders, payments, quotes, services, stats
 from api.utils.auth import AuthBearer
 
 
@@ -39,5 +39,6 @@ api.add_router("/leads", leads.router)
 api.add_router("/quotes", quotes.router)
 api.add_router("/orders", orders.router)
 api.add_router("/invoices", invoices.router)
+api.add_router("/marketing-campaigns", marketing_campaigns.router)
 api.add_router("/payments", payments.router)
 api.add_router("/stats", stats.router)
