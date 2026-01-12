@@ -7,10 +7,10 @@ from api.api.schema.schemas import ServiceIn, ServiceOut, ServiceUpdate
 from api.models.service import Service
 
 
-router = Router()
+router = Router(tags=["Services"])
 
 
-@router.get("", response=List[ServiceOut], tags=["Services"])
+@router.get("", response=List[ServiceOut])
 def list_services(request, status: str = None, category_id: int = None, search: str = None):
     services = Service.objects.select_related('category').all()
 
@@ -26,18 +26,18 @@ def list_services(request, status: str = None, category_id: int = None, search: 
     return services
 
 
-@router.post("", response=ServiceOut, tags=["Services"])
+@router.post("", response=ServiceOut)
 def create_service(request, payload: ServiceIn):
     service = Service.objects.create(**payload.dict())
     return service
 
 
-@router.get("/{service_id}", response=ServiceOut, tags=["Services"])
+@router.get("/{service_id}", response=ServiceOut)
 def get_service(request, service_id: int):
     return get_object_or_404(Service.objects.select_related('category'), id=service_id)
 
 
-@router.put("/{service_id}", response=ServiceOut, tags=["Services"])
+@router.put("/{service_id}", response=ServiceOut)
 def update_service(request, service_id: int, payload: ServiceUpdate):
     service = get_object_or_404(Service, id=service_id)
     for attr, value in payload.dict(exclude_unset=True).items():
@@ -46,7 +46,7 @@ def update_service(request, service_id: int, payload: ServiceUpdate):
     return service
 
 
-@router.delete("/{service_id}", tags=["Services"])
+@router.delete("/{service_id}")
 def delete_service(request, service_id: int):
     service = get_object_or_404(Service, id=service_id)
     service.delete()

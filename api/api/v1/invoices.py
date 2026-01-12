@@ -5,12 +5,14 @@ from django.db.models import Q
 
 from api.api.schema.schemas import InvoiceIn, InvoiceOut, InvoiceUpdate
 from api.models.payment import Invoice, InvoiceItem
+from ninja.pagination import paginate, LimitOffsetPagination
 
 
-router = Router()
+router = Router(tags=["Invoices"])
 
 
-@router.get("", response=List[InvoiceOut], tags=["Invoices"])
+@router.get("", response=List[InvoiceOut])
+@paginate(LimitOffsetPagination, page_size=10)
 def list_invoices(request, status: str = None, client_id: str = None, search: str = None):
     """List all invoices with optional filtering."""
     invoices = Invoice.objects.select_related(
@@ -29,7 +31,7 @@ def list_invoices(request, status: str = None, client_id: str = None, search: st
     return invoices
 
 
-@router.post("", response=InvoiceOut, tags=["Invoices"])
+@router.post("", response=InvoiceOut)
 def create_invoice(request, payload: InvoiceIn):
     """Create a new invoice with optional line items."""
     data = payload.dict()
@@ -42,7 +44,7 @@ def create_invoice(request, payload: InvoiceIn):
     return invoice
 
 
-@router.get("/{invoice_id}", response=InvoiceOut, tags=["Invoices"])
+@router.get("/{invoice_id}", response=InvoiceOut)
 def get_invoice(request, invoice_id: int):
     """Get a specific invoice by ID."""
     return get_object_or_404(
@@ -53,7 +55,7 @@ def get_invoice(request, invoice_id: int):
     )
 
 
-@router.put("/{invoice_id}", response=InvoiceOut, tags=["Invoices"])
+@router.put("/{invoice_id}", response=InvoiceOut)
 def update_invoice(request, invoice_id: int, payload: InvoiceUpdate):
     """Update an existing invoice."""
     invoice = get_object_or_404(Invoice, id=invoice_id)
@@ -63,7 +65,7 @@ def update_invoice(request, invoice_id: int, payload: InvoiceUpdate):
     return invoice
 
 
-@router.delete("/{invoice_id}", tags=["Invoices"])
+@router.delete("/{invoice_id}")
 def delete_invoice(request, invoice_id: int):
     """Delete an invoice."""
     invoice = get_object_or_404(Invoice, id=invoice_id)

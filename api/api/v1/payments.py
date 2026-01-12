@@ -4,12 +4,14 @@ from django.shortcuts import get_object_or_404
 
 from api.api.schema.schemas import PaymentIn, PaymentOut
 from api.models.payment import Payment
+from ninja.pagination import paginate, LimitOffsetPagination
 
 
-router = Router()
+router = Router(tags=["Payments"])
 
 
-@router.get("", response=List[PaymentOut], tags=["Payments"])
+@router.get("", response=List[PaymentOut])
+@paginate(LimitOffsetPagination, page_size=10)
 def list_payments(request, invoice_id: int = None):
     payments = Payment.objects.all()
 
@@ -19,18 +21,18 @@ def list_payments(request, invoice_id: int = None):
     return payments
 
 
-@router.post("", response=PaymentOut, tags=["Payments"])
+@router.post("", response=PaymentOut)
 def create_payment(request, payload: PaymentIn):
     payment = Payment.objects.create(**payload.dict())
     return payment
 
 
-@router.get("/{payment_id}", response=PaymentOut, tags=["Payments"])
+@router.get("/{payment_id}", response=PaymentOut)
 def get_payment(request, payment_id: int):
     return get_object_or_404(Payment, id=payment_id)
 
 
-@router.delete("/{payment_id}", tags=["Payments"])
+@router.delete("/{payment_id}")
 def delete_payment(request, payment_id: int):
     payment = get_object_or_404(Payment, id=payment_id)
     payment.delete()

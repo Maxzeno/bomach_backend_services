@@ -4,12 +4,14 @@ from django.shortcuts import get_object_or_404
 
 from api.api.schema.schemas import ServiceOrderIn, ServiceOrderOut, ServiceOrderUpdate
 from api.models.service import ServiceOrder
+from ninja.pagination import paginate, LimitOffsetPagination
 
 
-router = Router()
+router = Router(tags=["Service Orders"])
 
 
-@router.get("", response=List[ServiceOrderOut], tags=["Service Orders"])
+@router.get("", response=List[ServiceOrderOut])
+@paginate(LimitOffsetPagination, page_size=10)
 def list_orders(request, order_status: str = None, payment_status: str = None, client_id: str = None):
     """List all service orders with optional filtering."""
     orders = ServiceOrder.objects.select_related(
@@ -26,14 +28,14 @@ def list_orders(request, order_status: str = None, payment_status: str = None, c
     return orders
 
 
-@router.post("", response=ServiceOrderOut, tags=["Service Orders"])
+@router.post("", response=ServiceOrderOut)
 def create_order(request, payload: ServiceOrderIn):
     """Create a new service order."""
     order = ServiceOrder.objects.create(**payload.dict())
     return order
 
 
-@router.get("/{order_id}", response=ServiceOrderOut, tags=["Service Orders"])
+@router.get("/{order_id}", response=ServiceOrderOut)
 def get_order(request, order_id: int):
     """Get a specific service order by ID."""
     return get_object_or_404(
@@ -42,7 +44,7 @@ def get_order(request, order_id: int):
     )
 
 
-@router.put("/{order_id}", response=ServiceOrderOut, tags=["Service Orders"])
+@router.put("/{order_id}", response=ServiceOrderOut)
 def update_order(request, order_id: int, payload: ServiceOrderUpdate):
     """Update an existing service order."""
     order = get_object_or_404(ServiceOrder, id=order_id)
@@ -52,7 +54,7 @@ def update_order(request, order_id: int, payload: ServiceOrderUpdate):
     return order
 
 
-@router.delete("/{order_id}", tags=["Service Orders"])
+@router.delete("/{order_id}")
 def delete_order(request, order_id: int):
     """Delete a service order."""
     order = get_object_or_404(ServiceOrder, id=order_id)

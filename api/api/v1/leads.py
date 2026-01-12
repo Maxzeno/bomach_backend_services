@@ -5,12 +5,14 @@ from django.db.models import Q
 
 from api.api.schema.schemas import ServiceLeadIn, ServiceLeadOut, ServiceLeadUpdate
 from api.models.service import ServiceLead
+from ninja.pagination import paginate, LimitOffsetPagination
 
 
-router = Router()
+router = Router(tags=["Service Leads"])
 
 
-@router.get("", response=List[ServiceLeadOut], tags=["Service Leads"])
+@router.get("", response=List[ServiceLeadOut])
+@paginate(LimitOffsetPagination, page_size=10)
 def list_leads(request, status: str = None, client_id: str = None, search: str = None):
     """List all service leads with optional filtering."""
     leads = ServiceLead.objects.select_related('service', 'service__category').all()
@@ -27,14 +29,14 @@ def list_leads(request, status: str = None, client_id: str = None, search: str =
     return leads
 
 
-@router.post("", response=ServiceLeadOut, tags=["Service Leads"])
+@router.post("", response=ServiceLeadOut)
 def create_lead(request, payload: ServiceLeadIn):
     """Create a new service lead."""
     lead = ServiceLead.objects.create(**payload.dict())
     return lead
 
 
-@router.get("/{lead_id}", response=ServiceLeadOut, tags=["Service Leads"])
+@router.get("/{lead_id}", response=ServiceLeadOut)
 def get_lead(request, lead_id: int):
     """Get a specific service lead by ID."""
     return get_object_or_404(
@@ -43,7 +45,7 @@ def get_lead(request, lead_id: int):
     )
 
 
-@router.put("/{lead_id}", response=ServiceLeadOut, tags=["Service Leads"])
+@router.put("/{lead_id}", response=ServiceLeadOut)
 def update_lead(request, lead_id: int, payload: ServiceLeadUpdate):
     """Update an existing service lead."""
     lead = get_object_or_404(ServiceLead, id=lead_id)
@@ -53,7 +55,7 @@ def update_lead(request, lead_id: int, payload: ServiceLeadUpdate):
     return lead
 
 
-@router.delete("/{lead_id}", tags=["Service Leads"])
+@router.delete("/{lead_id}")
 def delete_lead(request, lead_id: int):
     """Delete a service lead."""
     lead = get_object_or_404(ServiceLead, id=lead_id)
