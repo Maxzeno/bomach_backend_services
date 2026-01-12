@@ -112,7 +112,6 @@ class Content(models.Model):
         max_length=50,
         null=True,
         blank=True,
-        related_name='authored_content',
         verbose_name=_("Author")
     )
 
