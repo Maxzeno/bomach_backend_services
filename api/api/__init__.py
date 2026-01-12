@@ -1,6 +1,6 @@
 from ninja import NinjaAPI, Schema, Swagger
 
-from api.api.v1 import budgets, categories, expenses, invoices, leads, marketing_campaigns, orders, payments, quotes, services, stats
+from api.api.v1 import budgets, categories, content, expenses, invoices, leads, marketing_campaigns, orders, payments, quotes, services, stats
 from api.utils.auth import AuthBearer
 
 
@@ -33,6 +33,7 @@ def health_check(request):
 # Register routers (all protected by default auth)
 api.add_router("/budgets", budgets.router)
 api.add_router("/categories", categories.router)
+api.add_router("/content", content.router)
 api.add_router("/expenses", expenses.router)
 api.add_router("/services", services.router)
 api.add_router("/leads", leads.router)
