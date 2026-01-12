@@ -1,7 +1,9 @@
 from ninja import Router
 
-from ..models import Service, ServiceOrder, Quote, Invoice
-from ..schemas import ServiceStatsOut
+from api.api.schema.schemas import ServiceStatsOut
+from api.models.payment import Invoice
+from api.models.service import Quote, Service, ServiceOrder
+
 
 router = Router()
 

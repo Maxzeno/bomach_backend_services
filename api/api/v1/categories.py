@@ -2,8 +2,9 @@ from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
 
-from ..models import ServiceCategory
-from ..schemas import ServiceCategoryIn, ServiceCategoryOut
+from api.api.schema.schemas import ServiceCategoryIn, ServiceCategoryOut
+from api.models.service import ServiceCategory
+
 
 router = Router()
 

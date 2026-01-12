@@ -39,7 +39,7 @@ class AuthClient:
     ):
         self.base_url = base_url or getattr(
             settings, 'AUTH_SERVICE_URL',
-            'http://localhost:8000'
+            'http://localhost:9000'
         )
         self.timeout = timeout
         self._session = None

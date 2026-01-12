@@ -3,8 +3,9 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-from ..models import Invoice, InvoiceItem
-from ..schemas import InvoiceIn, InvoiceUpdate, InvoiceOut
+from api.api.schema.schemas import InvoiceIn, InvoiceOut, InvoiceUpdate
+from api.models.payment import Invoice, InvoiceItem
+
 
 router = Router()
 

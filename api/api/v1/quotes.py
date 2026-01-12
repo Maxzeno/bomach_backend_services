@@ -1,9 +1,9 @@
 from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
+from api.api.schema.schemas import QuoteIn, QuoteOut, QuoteUpdate
+from api.models.service import Quote
 
-from ..models import Quote
-from ..schemas import QuoteIn, QuoteUpdate, QuoteOut
 
 router = Router()
 

@@ -3,8 +3,9 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-from ..models import ServiceLead
-from ..schemas import ServiceLeadIn, ServiceLeadUpdate, ServiceLeadOut
+from api.api.schema.schemas import ServiceLeadIn, ServiceLeadOut, ServiceLeadUpdate
+from api.models.service import ServiceLead
+
 
 router = Router()
 

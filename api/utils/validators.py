@@ -1,10 +1,3 @@
-"""
-Model field validators for cross-service references in Services (Billing) service.
-
-These validators ensure that employee, client, and user IDs referenced
-from other microservices actually exist before saving records.
-"""
-
 from typing import Optional
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -12,19 +5,6 @@ from api.utils.auth_client import AuthClient
 
 
 def validate_employee_id(employee_id: str, service_token: Optional[str] = None) -> dict:
-    """
-    Validate that an employee ID exists in the main backend.
-
-    Args:
-        employee_id: The employee ID to validate
-        service_token: Optional service authentication token
-
-    Returns:
-        dict: Employee information if valid
-
-    Raises:
-        ValidationError: If employee_id is invalid or not found
-    """
     if not employee_id:
         raise ValidationError("Employee ID is required")
 
@@ -64,19 +44,6 @@ def validate_employee_id(employee_id: str, service_token: Optional[str] = None) 
 
 
 def validate_client_id(client_id: str, service_token: Optional[str] = None) -> dict:
-    """
-    Validate that a client ID exists in the main backend.
-
-    Args:
-        client_id: The client ID to validate
-        service_token: Optional service authentication token
-
-    Returns:
-        dict: Client information if valid
-
-    Raises:
-        ValidationError: If client_id is invalid or not found
-    """
     if not client_id:
         raise ValidationError("Client ID is required")
 
@@ -110,19 +77,6 @@ def validate_client_id(client_id: str, service_token: Optional[str] = None) -> d
 
 
 def validate_user_id(user_id: str, service_token: Optional[str] = None) -> dict:
-    """
-    Validate that a user ID exists in the main backend.
-
-    Args:
-        user_id: The user ID to validate (can be string or int)
-        service_token: Optional service authentication token
-
-    Returns:
-        dict: User information if valid
-
-    Raises:
-        ValidationError: If user_id is invalid or not found
-    """
     if not user_id:
         raise ValidationError("User ID is required")
 

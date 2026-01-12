@@ -1,13 +1,18 @@
-from ninja import NinjaAPI, Schema
+from ninja import NinjaAPI, Schema, Swagger
 
-from .endpoints import categories, services, leads, quotes, orders, invoices, payments, stats
-from .utils.auth import AuthBearer
+from api.api.v1 import categories, invoices, leads, orders, payments, quotes, services, stats
+from api.utils.auth import AuthBearer
+
 
 # Initialize NinjaAPI with authentication
 api = NinjaAPI(
     title="BOMACH Service Management API",
     version="1.0.0",
+    docs_url="/docs/",
+
     auth=AuthBearer(),  # Require authentication for all endpoints by default
+    docs=Swagger(settings={"persistAuthorization": True})
+
 )
 
 

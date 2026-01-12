@@ -2,8 +2,9 @@ from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
 
-from ..models import Payment
-from ..schemas import PaymentIn, PaymentOut
+from api.api.schema.schemas import PaymentIn, PaymentOut
+from api.models.payment import Payment
+
 
 router = Router()
 
