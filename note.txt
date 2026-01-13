@@ -1,0 +1,2 @@
+create endpoints for this remember to put them in a different file /Users/developer/bomach/bomach_backend_services/api/api/v1/property.py
+here is the picture of the UI

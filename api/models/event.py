@@ -4,6 +4,10 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
 
+def default_list():
+    return []
+
+
 class Event(models.Model):
     """
     Model for managing marketing events and activities
@@ -166,7 +170,7 @@ class Event(models.Model):
     )
     
     team_members = models.JSONField(
-        default=lambda: [],
+        default=default_list,
         blank=True,
         verbose_name=_("Team Members")
     )
