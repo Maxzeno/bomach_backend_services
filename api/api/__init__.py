@@ -9,7 +9,6 @@ api = NinjaAPI(
     title="BOMACH Service Management API",
     version="1.0.0",
     docs_url="/docs/",
-
     auth=AuthBearer(),  # Require authentication for all endpoints by default
     docs=Swagger(settings={"persistAuthorization": True})
 

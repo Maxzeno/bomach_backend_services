@@ -27,8 +27,13 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', '192.168.0.214', '192.168.0.188', '.ngrok-free.app', '.onrender.com']
+_ALLOWED_HOSTS = config('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS.extend(_ALLOWED_HOSTS.split())
 
+ZOHOZEPTOMAIL_KEY = config('ZOHOZEPTOMAIL_KEY')
+
+FRONTEND_PRODUCTION_DOMAIN = config('FRONTEND_PRODUCTION_DOMAIN', default=None)
 
 # Application definition
 
@@ -45,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Add WhiteNoise for static files
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -77,12 +83,28 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+TRY_LOCAL_DB = config('TRY_LOCAL_DB', default=False, cast=bool)
+
+if TRY_LOCAL_DB:
+    # Use SQLite for local development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    # Use PostgreSQL from environment variables
+    DATABASES = {
+        "default": {
+            "ENGINE": config('DATABASES_DEFAULT_ENGINE', default='django.db.backends.postgresql'),
+            "NAME": config('DATABASES_DEFAULT_NAME'),
+            "USER": config('DATABASES_DEFAULT_USER'),
+            "PASSWORD": config('DATABASES_DEFAULT_PASSWORD'),
+            "HOST": config('DATABASES_DEFAULT_HOST'),
+            "PORT": config('DATABASES_DEFAULT_PORT', default='5432'),
+        }
+    }
 
 
 # Password validation
@@ -126,12 +148,38 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# CORS Settings
-# Configure allowed origins via environment variable
-# Example: CORS_ALLOWED_ORIGINS=http://localhost:3000,https://yourapp.com
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000', cast=Csv())
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
-CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
+
+
+FLUTTER_LOCAL_ORIGINS = [
+    'http://127.0.0.1:52240',
+]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+    r"^https://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+    r"^https://127\.0\.0\.1:\d+$",
+] if DEBUG else []
+CORS_ALLOWED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = []
+
+# Add Flutter production domains
+for domain in FRONTEND_PRODUCTION_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{domain}')
+    CORS_ALLOWED_ORIGINS.append(f'https://{domain}')
+
+# Add Flutter local development origins
+if DEBUG:
+    CORS_ALLOWED_ORIGINS.extend(FLUTTER_LOCAL_ORIGINS)
+    CSRF_TRUSTED_ORIGINS.extend(FLUTTER_LOCAL_ORIGINS)
+
+# Add backend allowed hosts
+for host in _ALLOWED_HOSTS.split():
+    CSRF_TRUSTED_ORIGINS.append(f'http://{host}')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
+    CORS_ALLOWED_ORIGINS.append(f'http://{host}')
+    CORS_ALLOWED_ORIGINS.append(f'https://{host}')
+
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
