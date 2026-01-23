@@ -176,15 +176,13 @@ class Event(models.Model):
     )
     
     # Additional Information
-    banner_image = models.ImageField(
-        upload_to='event_banners/',
+    banner_image = models.URLField(
         blank=True,
         null=True,
         verbose_name=_("Banner Image")
     )
     
-    thumbnail = models.ImageField(
-        upload_to='event_thumbnails/',
+    thumbnail = models.URLField(
         blank=True,
         null=True,
         verbose_name=_("Thumbnail")
