@@ -65,7 +65,7 @@ def delete_budget(request, budget_id: int):
     """Delete a budget."""
     budget = get_object_or_404(Budget, id=budget_id)
     budget.delete()
-    return {"success": True, "message": "Budget deleted successfully"}
+    return {"detail": "Budget deleted successfully"}
 
 
 @router.get("/invoice/{invoice_id}", response=List[BudgetOut])

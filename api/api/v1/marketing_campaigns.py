@@ -66,7 +66,7 @@ def delete_campaign(request, campaign_id: int):
     """Delete a marketing campaign."""
     campaign = get_object_or_404(MarketingCampaign, id=campaign_id)
     campaign.delete()
-    return {"success": True, "message": "Marketing campaign deleted successfully"}
+    return {"detail": "Marketing campaign deleted successfully"}
 
 
 @router.get("/status/{status}/campaigns", response=List[MarketingCampaignOut])

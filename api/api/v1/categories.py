@@ -40,4 +40,4 @@ def update_category(request, category_id: int, payload: ServiceCategoryIn):
 def delete_category(request, category_id: int):
     category = get_object_or_404(ServiceCategory, id=category_id)
     category.delete()
-    return {"success": True, "message": "Category deleted successfully"}
+    return {"detail": "Category deleted successfully"}

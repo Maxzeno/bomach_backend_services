@@ -36,4 +36,4 @@ def get_payment(request, payment_id: int):
 def delete_payment(request, payment_id: int):
     payment = get_object_or_404(Payment, id=payment_id)
     payment.delete()
-    return {"success": True, "message": "Payment deleted successfully"}
+    return {"detail": "Payment deleted successfully"}

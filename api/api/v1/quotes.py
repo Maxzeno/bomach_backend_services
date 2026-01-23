@@ -54,4 +54,4 @@ def delete_quote(request, quote_id: int):
     """Delete a quote."""
     quote = get_object_or_404(Quote, id=quote_id)
     quote.delete()
-    return {"success": True, "message": "Quote deleted successfully"}
+    return {"detail": "Quote deleted successfully"}

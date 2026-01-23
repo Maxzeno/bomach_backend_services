@@ -59,4 +59,4 @@ def delete_order(request, order_id: int):
     """Delete a service order."""
     order = get_object_or_404(ServiceOrder, id=order_id)
     order.delete()
-    return {"success": True, "message": "Order deleted successfully"}
+    return {"detail": "Order deleted successfully"}

@@ -20,15 +20,6 @@ class HealthCheckResponse(Schema):
     status: str
     message: str
 
-
-@api.get("/health", response=HealthCheckResponse, tags=["Health"], auth=None)  # Public endpoint
-def health_check(request):
-    return {
-        "status": "ok",
-        "message": "Service is running"
-    }
-
-
 # Register routers (all protected by default auth)
 api.add_router("/budgets", budgets.router)
 api.add_router("/categories", categories.router)

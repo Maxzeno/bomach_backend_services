@@ -78,7 +78,7 @@ def delete_content(request, content_id: int):
     """Delete content."""
     content = get_object_or_404(Content, id=content_id)
     content.delete()
-    return {"success": True, "message": "Content deleted successfully"}
+    return {"detail": "Content deleted successfully"}
 
 
 @router.get("/slug/{slug}", response=ContentOut)

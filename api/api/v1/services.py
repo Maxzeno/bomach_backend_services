@@ -50,4 +50,4 @@ def update_service(request, service_id: int, payload: ServiceUpdate):
 def delete_service(request, service_id: int):
     service = get_object_or_404(Service, id=service_id)
     service.delete()
-    return {"success": True, "message": "Service deleted successfully"}
+    return {"detail": "Service deleted successfully"}

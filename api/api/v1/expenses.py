@@ -65,7 +65,7 @@ def delete_expense(request, expense_id: int):
     """Delete an expense."""
     expense = get_object_or_404(Expense, id=expense_id)
     expense.delete()
-    return {"success": True, "message": "Expense deleted successfully"}
+    return {"detail": "Expense deleted successfully"}
 
 
 @router.get("/user/{user_id}/expenses", response=List[ExpenseOut])

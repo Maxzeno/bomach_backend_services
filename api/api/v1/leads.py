@@ -60,4 +60,4 @@ def delete_lead(request, lead_id: int):
     """Delete a service lead."""
     lead = get_object_or_404(ServiceLead, id=lead_id)
     lead.delete()
-    return {"success": True, "message": "Lead deleted successfully"}
+    return {"detail": "Lead deleted successfully"}

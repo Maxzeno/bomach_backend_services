@@ -70,4 +70,4 @@ def delete_invoice(request, invoice_id: int):
     """Delete an invoice."""
     invoice = get_object_or_404(Invoice, id=invoice_id)
     invoice.delete()
-    return {"success": True, "message": "Invoice deleted successfully"}
+    return {"detail": "Invoice deleted successfully"}

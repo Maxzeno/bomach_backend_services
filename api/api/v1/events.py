@@ -87,7 +87,7 @@ def delete_event(request, event_id: int):
     """Delete an event."""
     event = get_object_or_404(Event, id=event_id)
     event.delete()
-    return {"success": True, "message": "Event deleted successfully"}
+    return {"detail": "Event deleted successfully"}
 
 
 # Event Filtered Views
@@ -138,7 +138,7 @@ def increment_event_registration(request, event_id: int):
     event = get_object_or_404(Event, id=event_id)
     if event.increment_registrations():
         return event
-    return {"success": False, "message": "Event is full"}
+    return {"detail": "Event is full"}
 
 
 @router.post("/{event_id}/decrement-registration", response=EventOut)
@@ -147,7 +147,7 @@ def decrement_event_registration(request, event_id: int):
     event = get_object_or_404(Event, id=event_id)
     if event.decrement_registrations():
         return event
-    return {"success": False, "message": "No registrations to decrement"}
+    return {"detail": "No registrations to decrement"}
 
 
 # EventRegistration CRUD Operations
@@ -182,11 +182,11 @@ def create_registration(request, payload: EventRegistrationIn):
 
     # Check if event is full
     if event.is_full:
-        return {"success": False, "message": "Event is full"}
+        return {"detail": "Event is full"}
 
     # Check if registration is allowed
     if not event.allow_registration:
-        return {"success": False, "message": "Registration is not allowed for this event"}
+        return {"detail": "Registration is not allowed for this event"}
 
     # Create registration
     registration = EventRegistration.objects.create(
@@ -229,7 +229,7 @@ def delete_registration(request, registration_id: int):
     # Decrement event registration count
     event.decrement_registrations()
 
-    return {"success": True, "message": "Registration deleted successfully"}
+    return {"detail": "Registration deleted successfully"}
 
 
 @router.get("/{event_id}/registrations", response=List[EventRegistrationOut])
