@@ -1,2 +1,3 @@
-create endpoints for this remember to put them in a different file /Users/developer/bomach/bomach_backend_services/api/api/v1/property.py
-here is the picture of the UI
+Budget: 
+- project_id (In operations service)
+- invoice_id (Should be a ForeignKey because the model in in this service)

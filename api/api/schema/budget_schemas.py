@@ -5,7 +5,7 @@ from decimal import Decimal
 
 
 class BudgetIn(Schema):
-    invoice_id: str
+    invoice_id: int
     project_id: str
     budget_date: date
     amount: Decimal
@@ -14,7 +14,7 @@ class BudgetIn(Schema):
 
 
 class BudgetUpdate(Schema):
-    invoice_id: Optional[str] = None
+    invoice_id: Optional[int] = None
     project_id: Optional[str] = None
     budget_date: Optional[date] = None
     amount: Optional[Decimal] = None
@@ -24,7 +24,7 @@ class BudgetUpdate(Schema):
 
 class BudgetOut(Schema):
     id: int
-    invoice_id: str
+    invoice_id: int
     project_id: str
     budget_date: date
     amount: Decimal

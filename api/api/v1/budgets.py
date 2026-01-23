@@ -30,9 +30,7 @@ def list_budgets(
     if payment_method:
         budgets = budgets.filter(payment_method=payment_method)
     if search:
-        budgets = budgets.filter(
-            Q(invoice_id__icontains=search) | Q(project_id__icontains=search)
-        )
+        budgets = budgets.filter(Q(project_id__icontains=search))
 
     return budgets
 
@@ -70,7 +68,7 @@ def delete_budget(request, budget_id: int):
 
 @router.get("/invoice/{invoice_id}", response=List[BudgetOut])
 @paginate(LimitOffsetPagination, page_size=10)
-def get_budgets_by_invoice(request, invoice_id: str):
+def get_budgets_by_invoice(request, invoice_id: int):
     """Get all budgets for a specific invoice ID."""
     budgets = Budget.objects.filter(invoice_id=invoice_id)
     return budgets

@@ -1,5 +1,7 @@
 from django.db import models
 
+from api.models.payment import Invoice
+
 
 class Budget(models.Model):
     class PaymentMethod(models.TextChoices):
@@ -14,11 +16,13 @@ class Budget(models.Model):
         PAID = "paid", "Paid"
         CANCELLED = "cancelled", "Cancelled"
 
-    invoice_id = models.CharField(
-        max_length=50,
-        unique=True,
-        help_text="Invoice reference e.g. FJ9387HDS"
-    )
+    invoice_id = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='budgets')
+
+    # invoice_id = models.CharField(
+    #     max_length=50,
+    #     unique=True,
+    #     help_text="Invoice reference e.g. FJ9387HDS"
+    # )
 
     # we should get the client id and name from the project
     project_id = models.CharField(
