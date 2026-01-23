@@ -3,12 +3,14 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum, Avg, Count
 from ninja.pagination import paginate, LimitOffsetPagination
+from django.core.exceptions import ValidationError
 
 from api.api.schema.content_schemas import (
     ContentIn,
     ContentOut,
     ContentUpdate
 )
+from api.api.schema.others import MessageSchema
 from api.models.content import Content
 
 
@@ -50,11 +52,16 @@ def list_content(
     return contents
 
 
-@router.post("", response=ContentOut)
+@router.post("", response={201: ContentOut, 400: MessageSchema})
 def create_content(request, payload: ContentIn):
     """Create new content."""
-    content = Content.objects.create(**payload.dict())
-    return content
+    try:
+        content = Content.objects.create(**payload.dict())
+        return 201, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{content_id}", response=ContentOut)
@@ -63,22 +70,32 @@ def get_content(request, content_id: int):
     return get_object_or_404(Content, id=content_id)
 
 
-@router.put("/{content_id}", response=ContentOut)
+@router.put("/{content_id}", response={200: ContentOut, 400: MessageSchema, 404: MessageSchema})
 def update_content(request, content_id: int, payload: ContentUpdate):
     """Update existing content."""
-    content = get_object_or_404(Content, id=content_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(content, attr, value)
-    content.save()
-    return content
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(content, attr, value)
+        content.save()
+        return 200, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{content_id}")
+@router.delete("/{content_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_content(request, content_id: int):
     """Delete content."""
-    content = get_object_or_404(Content, id=content_id)
-    content.delete()
-    return {"detail": "Content deleted successfully"}
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        content.delete()
+        return 200, {"detail": "Content deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/slug/{slug}", response=ContentOut)
@@ -103,36 +120,56 @@ def get_platform_content(request, platform: str):
     return contents
 
 
-@router.post("/{content_id}/increment-views", response=ContentOut)
+@router.post("/{content_id}/increment-views", response={200: ContentOut, 400: MessageSchema, 404: MessageSchema})
 def increment_views(request, content_id: int):
     """Increment view count for content."""
-    content = get_object_or_404(Content, id=content_id)
-    content.increment_views()
-    return content
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        content.increment_views()
+        return 200, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.post("/{content_id}/increment-likes", response=ContentOut)
+@router.post("/{content_id}/increment-likes", response={200: ContentOut, 400: MessageSchema, 404: MessageSchema})
 def increment_likes(request, content_id: int):
     """Increment like count for content."""
-    content = get_object_or_404(Content, id=content_id)
-    content.increment_likes()
-    return content
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        content.increment_likes()
+        return 200, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.post("/{content_id}/increment-shares", response=ContentOut)
+@router.post("/{content_id}/increment-shares", response={200: ContentOut, 400: MessageSchema, 404: MessageSchema})
 def increment_shares(request, content_id: int):
     """Increment share count for content."""
-    content = get_object_or_404(Content, id=content_id)
-    content.increment_shares()
-    return content
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        content.increment_shares()
+        return 200, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.post("/{content_id}/increment-comments", response=ContentOut)
+@router.post("/{content_id}/increment-comments", response={200: ContentOut, 400: MessageSchema, 404: MessageSchema})
 def increment_comments(request, content_id: int):
     """Increment comment count for content."""
-    content = get_object_or_404(Content, id=content_id)
-    content.increment_comments()
-    return content
+    try:
+        content = get_object_or_404(Content, id=content_id)
+        content.increment_comments()
+        return 200, content
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/scheduled/upcoming", response=List[ContentOut])

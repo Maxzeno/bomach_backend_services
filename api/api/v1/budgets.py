@@ -2,8 +2,10 @@ from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 
 from api.api.schema.budget_schemas import BudgetIn, BudgetOut, BudgetUpdate
+from api.api.schema.others import MessageSchema
 from api.models.budget import Budget
 from ninja.pagination import paginate, LimitOffsetPagination
 
@@ -35,11 +37,16 @@ def list_budgets(
     return budgets
 
 
-@router.post("", response=BudgetOut)
+@router.post("", response={201: BudgetOut, 400: MessageSchema})
 def create_budget(request, payload: BudgetIn):
     """Create a new budget."""
-    budget = Budget.objects.create(**payload.dict())
-    return budget
+    try:
+        budget = Budget.objects.create(**payload.dict())
+        return 201, budget
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{budget_id}", response=BudgetOut)
@@ -48,22 +55,32 @@ def get_budget(request, budget_id: int):
     return get_object_or_404(Budget, id=budget_id)
 
 
-@router.put("/{budget_id}", response=BudgetOut)
+@router.put("/{budget_id}", response={200: BudgetOut, 400: MessageSchema, 404: MessageSchema})
 def update_budget(request, budget_id: int, payload: BudgetUpdate):
     """Update an existing budget."""
-    budget = get_object_or_404(Budget, id=budget_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(budget, attr, value)
-    budget.save()
-    return budget
+    try:
+        budget = get_object_or_404(Budget, id=budget_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(budget, attr, value)
+        budget.save()
+        return 200, budget
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{budget_id}")
+@router.delete("/{budget_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_budget(request, budget_id: int):
     """Delete a budget."""
-    budget = get_object_or_404(Budget, id=budget_id)
-    budget.delete()
-    return {"detail": "Budget deleted successfully"}
+    try:
+        budget = get_object_or_404(Budget, id=budget_id)
+        budget.delete()
+        return 200, {"detail": "Budget deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/invoice/{invoice_id}", response=List[BudgetOut])

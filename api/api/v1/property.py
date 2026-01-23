@@ -3,8 +3,10 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count
 from ninja.pagination import paginate, LimitOffsetPagination
+from django.core.exceptions import ValidationError
 
 from api.api.schema.property_schemas import PropertyIn, PropertyOut, PropertyUpdate, PropertyStatsOut
+from api.api.schema.others import MessageSchema
 from api.models.property import Property
 
 
@@ -62,11 +64,16 @@ def list_properties(
     return properties
 
 
-@router.post("", response=PropertyOut)
+@router.post("", response={201: PropertyOut, 400: MessageSchema})
 def create_property(request, payload: PropertyIn):
     """Create a new property."""
-    property = Property.objects.create(**payload.dict())
-    return property
+    try:
+        property = Property.objects.create(**payload.dict())
+        return 201, property
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{property_id}", response=PropertyOut)
@@ -75,22 +82,32 @@ def get_property(request, property_id: int):
     return get_object_or_404(Property, id=property_id)
 
 
-@router.put("/{property_id}", response=PropertyOut)
+@router.put("/{property_id}", response={200: PropertyOut, 400: MessageSchema, 404: MessageSchema})
 def update_property(request, property_id: int, payload: PropertyUpdate):
     """Update an existing property."""
-    property = get_object_or_404(Property, id=property_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(property, attr, value)
-    property.save()
-    return property
+    try:
+        property = get_object_or_404(Property, id=property_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(property, attr, value)
+        property.save()
+        return 200, property
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{property_id}")
+@router.delete("/{property_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_property(request, property_id: int):
     """Delete a property."""
-    property = get_object_or_404(Property, id=property_id)
-    property.delete()
-    return {"detail": "Property deleted successfully"}
+    try:
+        property = get_object_or_404(Property, id=property_id)
+        property.delete()
+        return 200, {"detail": "Property deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/client/{client_id}/properties", response=List[PropertyOut])

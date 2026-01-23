@@ -1,3 +1,10 @@
 Budget: 
 - project_id (In operations service)
 - invoice_id (Should be a ForeignKey because the model in in this service)
+
+Wrap in the post, put and delete endpoints also add the right status and schema for different error message MessageSchema 
+
+    try:
+
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}

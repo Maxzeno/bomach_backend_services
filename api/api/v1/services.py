@@ -2,8 +2,10 @@ from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 
 from api.api.schema.schemas import ServiceIn, ServiceOut, ServiceUpdate
+from api.api.schema.others import MessageSchema
 from api.models.service import Service
 
 
@@ -26,10 +28,15 @@ def list_services(request, status: str = None, category_id: int = None, search: 
     return services
 
 
-@router.post("", response=ServiceOut)
+@router.post("", response={201: ServiceOut, 400: MessageSchema})
 def create_service(request, payload: ServiceIn):
-    service = Service.objects.create(**payload.dict())
-    return service
+    try:
+        service = Service.objects.create(**payload.dict())
+        return 201, service
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{service_id}", response=ServiceOut)
@@ -37,17 +44,27 @@ def get_service(request, service_id: int):
     return get_object_or_404(Service.objects.select_related('category'), id=service_id)
 
 
-@router.put("/{service_id}", response=ServiceOut)
+@router.put("/{service_id}", response={200: ServiceOut, 400: MessageSchema, 404: MessageSchema})
 def update_service(request, service_id: int, payload: ServiceUpdate):
-    service = get_object_or_404(Service, id=service_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(service, attr, value)
-    service.save()
-    return service
+    try:
+        service = get_object_or_404(Service, id=service_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(service, attr, value)
+        service.save()
+        return 200, service
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{service_id}")
+@router.delete("/{service_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_service(request, service_id: int):
-    service = get_object_or_404(Service, id=service_id)
-    service.delete()
-    return {"detail": "Service deleted successfully"}
+    try:
+        service = get_object_or_404(Service, id=service_id)
+        service.delete()
+        return 200, {"detail": "Service deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}

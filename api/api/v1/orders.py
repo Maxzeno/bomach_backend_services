@@ -1,8 +1,10 @@
 from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
 
 from api.api.schema.schemas import ServiceOrderIn, ServiceOrderOut, ServiceOrderUpdate
+from api.api.schema.others import MessageSchema
 from api.models.service import ServiceOrder
 from ninja.pagination import paginate, LimitOffsetPagination
 
@@ -28,11 +30,16 @@ def list_orders(request, order_status: str = None, payment_status: str = None, c
     return orders
 
 
-@router.post("", response=ServiceOrderOut)
+@router.post("", response={201: ServiceOrderOut, 400: MessageSchema})
 def create_order(request, payload: ServiceOrderIn):
     """Create a new service order."""
-    order = ServiceOrder.objects.create(**payload.dict())
-    return order
+    try:
+        order = ServiceOrder.objects.create(**payload.dict())
+        return 201, order
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{order_id}", response=ServiceOrderOut)
@@ -44,19 +51,29 @@ def get_order(request, order_id: int):
     )
 
 
-@router.put("/{order_id}", response=ServiceOrderOut)
+@router.put("/{order_id}", response={200: ServiceOrderOut, 400: MessageSchema, 404: MessageSchema})
 def update_order(request, order_id: int, payload: ServiceOrderUpdate):
     """Update an existing service order."""
-    order = get_object_or_404(ServiceOrder, id=order_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(order, attr, value)
-    order.save()
-    return order
+    try:
+        order = get_object_or_404(ServiceOrder, id=order_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(order, attr, value)
+        order.save()
+        return 200, order
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{order_id}")
+@router.delete("/{order_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_order(request, order_id: int):
     """Delete a service order."""
-    order = get_object_or_404(ServiceOrder, id=order_id)
-    order.delete()
-    return {"detail": "Order deleted successfully"}
+    try:
+        order = get_object_or_404(ServiceOrder, id=order_id)
+        order.delete()
+        return 200, {"detail": "Order deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}

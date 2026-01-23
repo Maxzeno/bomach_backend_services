@@ -3,8 +3,10 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from ninja.pagination import paginate, LimitOffsetPagination
+from django.core.exceptions import ValidationError
 
 from api.api.schema.document_schemas import DocumentIn, DocumentOut, DocumentUpdate
+from api.api.schema.others import MessageSchema
 from api.models.document import Document
 
 
@@ -38,11 +40,16 @@ def list_documents(
     return documents
 
 
-@router.post("", response=DocumentOut)
+@router.post("", response={201: DocumentOut, 400: MessageSchema})
 def create_document(request, payload: DocumentIn):
     """Create a new document."""
-    document = Document.objects.create(**payload.dict())
-    return document
+    try:
+        document = Document.objects.create(**payload.dict())
+        return 201, document
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{document_id}", response=DocumentOut)
@@ -54,22 +61,32 @@ def get_document(request, document_id: int):
     )
 
 
-@router.put("/{document_id}", response=DocumentOut)
+@router.put("/{document_id}", response={200: DocumentOut, 400: MessageSchema, 404: MessageSchema})
 def update_document(request, document_id: int, payload: DocumentUpdate):
     """Update an existing document."""
-    document = get_object_or_404(Document, id=document_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(document, attr, value)
-    document.save()
-    return document
+    try:
+        document = get_object_or_404(Document, id=document_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(document, attr, value)
+        document.save()
+        return 200, document
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{document_id}")
+@router.delete("/{document_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_document(request, document_id: int):
     """Delete a document."""
-    document = get_object_or_404(Document, id=document_id)
-    document.delete()
-    return {"detail": "Document deleted successfully"}
+    try:
+        document = get_object_or_404(Document, id=document_id)
+        document.delete()
+        return 200, {"detail": "Document deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/user/{user_id}/documents", response=List[DocumentOut])

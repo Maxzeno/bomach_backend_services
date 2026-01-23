@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum, Avg, Count
 from ninja.pagination import paginate, LimitOffsetPagination
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from api.api.schema.event_schemas import (
     EventIn,
@@ -13,6 +14,7 @@ from api.api.schema.event_schemas import (
     EventRegistrationOut,
     EventRegistrationUpdate
 )
+from api.api.schema.others import MessageSchema
 from api.models.event import Event, EventRegistration
 
 
@@ -59,11 +61,16 @@ def list_events(
     return events
 
 
-@router.post("", response=EventOut)
+@router.post("", response={201: EventOut, 400: MessageSchema})
 def create_event(request, payload: EventIn):
     """Create a new event."""
-    event = Event.objects.create(**payload.dict())
-    return event
+    try:
+        event = Event.objects.create(**payload.dict())
+        return 201, event
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{event_id}", response=EventOut)
@@ -72,22 +79,32 @@ def get_event(request, event_id: int):
     return get_object_or_404(Event, id=event_id)
 
 
-@router.put("/{event_id}", response=EventOut)
+@router.put("/{event_id}", response={200: EventOut, 400: MessageSchema, 404: MessageSchema})
 def update_event(request, event_id: int, payload: EventUpdate):
     """Update an existing event."""
-    event = get_object_or_404(Event, id=event_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(event, attr, value)
-    event.save()
-    return event
+    try:
+        event = get_object_or_404(Event, id=event_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(event, attr, value)
+        event.save()
+        return 200, event
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{event_id}")
+@router.delete("/{event_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_event(request, event_id: int):
     """Delete an event."""
-    event = get_object_or_404(Event, id=event_id)
-    event.delete()
-    return {"detail": "Event deleted successfully"}
+    try:
+        event = get_object_or_404(Event, id=event_id)
+        event.delete()
+        return 200, {"detail": "Event deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 # Event Filtered Views
@@ -175,32 +192,37 @@ def list_registrations(
     return registrations
 
 
-@router.post("/registrations", response=EventRegistrationOut)
+@router.post("/registrations", response={201: EventRegistrationOut, 400: MessageSchema, 404: MessageSchema})
 def create_registration(request, payload: EventRegistrationIn):
     """Create a new event registration."""
-    event = get_object_or_404(Event, id=payload.event_id)
+    try:
+        event = get_object_or_404(Event, id=payload.event_id)
 
-    # Check if event is full
-    if event.is_full:
-        return {"detail": "Event is full"}
+        # Check if event is full
+        if event.is_full:
+            return 400, {"detail": "Event is full"}
 
-    # Check if registration is allowed
-    if not event.allow_registration:
-        return {"detail": "Registration is not allowed for this event"}
+        # Check if registration is allowed
+        if not event.allow_registration:
+            return 400, {"detail": "Registration is not allowed for this event"}
 
-    # Create registration
-    registration = EventRegistration.objects.create(
-        event=event,
-        attendee_id=payload.attendee_id,
-        status=payload.status,
-        payment_status=payload.payment_status,
-        notes=payload.notes
-    )
+        # Create registration
+        registration = EventRegistration.objects.create(
+            event=event,
+            attendee_id=payload.attendee_id,
+            status=payload.status,
+            payment_status=payload.payment_status,
+            notes=payload.notes
+        )
 
-    # Increment event registration count
-    event.increment_registrations()
+        # Increment event registration count
+        event.increment_registrations()
 
-    return registration
+        return 201, registration
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/registrations/{registration_id}", response=EventRegistrationOut)
@@ -209,27 +231,37 @@ def get_registration(request, registration_id: int):
     return get_object_or_404(EventRegistration.objects.select_related('event'), id=registration_id)
 
 
-@router.put("/registrations/{registration_id}", response=EventRegistrationOut)
+@router.put("/registrations/{registration_id}", response={200: EventRegistrationOut, 400: MessageSchema, 404: MessageSchema})
 def update_registration(request, registration_id: int, payload: EventRegistrationUpdate):
     """Update an existing event registration."""
-    registration = get_object_or_404(EventRegistration, id=registration_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(registration, attr, value)
-    registration.save()
-    return registration
+    try:
+        registration = get_object_or_404(EventRegistration, id=registration_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(registration, attr, value)
+        registration.save()
+        return 200, registration
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/registrations/{registration_id}")
+@router.delete("/registrations/{registration_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_registration(request, registration_id: int):
     """Delete an event registration."""
-    registration = get_object_or_404(EventRegistration, id=registration_id)
-    event = registration.event
-    registration.delete()
+    try:
+        registration = get_object_or_404(EventRegistration, id=registration_id)
+        event = registration.event
+        registration.delete()
 
-    # Decrement event registration count
-    event.decrement_registrations()
+        # Decrement event registration count
+        event.decrement_registrations()
 
-    return {"detail": "Registration deleted successfully"}
+        return 200, {"detail": "Registration deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{event_id}/registrations", response=List[EventRegistrationOut])

@@ -3,12 +3,14 @@ from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum, Avg, Count
 from ninja.pagination import paginate, LimitOffsetPagination
+from django.core.exceptions import ValidationError
 
 from api.api.schema.marketing_campaign_schemas import (
     MarketingCampaignIn,
     MarketingCampaignOut,
     MarketingCampaignUpdate
 )
+from api.api.schema.others import MessageSchema
 from api.models.marketing_campaign import MarketingCampaign
 
 
@@ -38,11 +40,16 @@ def list_campaigns(
     return campaigns
 
 
-@router.post("", response=MarketingCampaignOut)
+@router.post("", response={201: MarketingCampaignOut, 400: MessageSchema})
 def create_campaign(request, payload: MarketingCampaignIn):
     """Create a new marketing campaign."""
-    campaign = MarketingCampaign.objects.create(**payload.dict())
-    return campaign
+    try:
+        campaign = MarketingCampaign.objects.create(**payload.dict())
+        return 201, campaign
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{campaign_id}", response=MarketingCampaignOut)
@@ -51,22 +58,32 @@ def get_campaign(request, campaign_id: int):
     return get_object_or_404(MarketingCampaign, id=campaign_id)
 
 
-@router.put("/{campaign_id}", response=MarketingCampaignOut)
+@router.put("/{campaign_id}", response={200: MarketingCampaignOut, 400: MessageSchema, 404: MessageSchema})
 def update_campaign(request, campaign_id: int, payload: MarketingCampaignUpdate):
     """Update an existing marketing campaign."""
-    campaign = get_object_or_404(MarketingCampaign, id=campaign_id)
-    for attr, value in payload.dict(exclude_unset=True).items():
-        setattr(campaign, attr, value)
-    campaign.save()
-    return campaign
+    try:
+        campaign = get_object_or_404(MarketingCampaign, id=campaign_id)
+        for attr, value in payload.dict(exclude_unset=True).items():
+            setattr(campaign, attr, value)
+        campaign.save()
+        return 200, campaign
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
-@router.delete("/{campaign_id}")
+@router.delete("/{campaign_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_campaign(request, campaign_id: int):
     """Delete a marketing campaign."""
-    campaign = get_object_or_404(MarketingCampaign, id=campaign_id)
-    campaign.delete()
-    return {"detail": "Marketing campaign deleted successfully"}
+    try:
+        campaign = get_object_or_404(MarketingCampaign, id=campaign_id)
+        campaign.delete()
+        return 200, {"detail": "Marketing campaign deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/status/{status}/campaigns", response=List[MarketingCampaignOut])

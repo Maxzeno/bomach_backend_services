@@ -1,8 +1,10 @@
 from typing import List
 from ninja import Router
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError
 
 from api.api.schema.schemas import PaymentIn, PaymentOut
+from api.api.schema.others import MessageSchema
 from api.models.payment import Payment
 from ninja.pagination import paginate, LimitOffsetPagination
 
@@ -21,10 +23,15 @@ def list_payments(request, invoice_id: int = None):
     return payments
 
 
-@router.post("", response=PaymentOut)
+@router.post("", response={201: PaymentOut, 400: MessageSchema})
 def create_payment(request, payload: PaymentIn):
-    payment = Payment.objects.create(**payload.dict())
-    return payment
+    try:
+        payment = Payment.objects.create(**payload.dict())
+        return 201, payment
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
 
 
 @router.get("/{payment_id}", response=PaymentOut)
@@ -32,8 +39,13 @@ def get_payment(request, payment_id: int):
     return get_object_or_404(Payment, id=payment_id)
 
 
-@router.delete("/{payment_id}")
+@router.delete("/{payment_id}", response={200: MessageSchema, 400: MessageSchema, 404: MessageSchema})
 def delete_payment(request, payment_id: int):
-    payment = get_object_or_404(Payment, id=payment_id)
-    payment.delete()
-    return {"detail": "Payment deleted successfully"}
+    try:
+        payment = get_object_or_404(Payment, id=payment_id)
+        payment.delete()
+        return 200, {"detail": "Payment deleted successfully"}
+    except ValidationError as e:
+        return 400, {'detail': e.messages[0]}
+    except Exception as e:
+        return 400, {'detail': str(e)}
